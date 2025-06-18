@@ -2,9 +2,9 @@ name: Build & Deploy Android App to EC2
 
 on:
   push:
-    branches: ["master"]
+    branches: ["main"]  # Make sure this matches your branch name
   pull_request:
-    branches: ["master"]
+    branches: ["main"]
 
 permissions:
   contents: read
@@ -32,15 +32,7 @@ jobs:
         script: |
           echo "${{ secrets.DOCKER_TOKEN }}" | docker login --username "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
-          # Stop and remove any running containers with this name
-          docker stop android-camera || true
-          docker rm android-camera || true
+          # Stop and remove existing container if running
+          docker ps -q --filter "name=android-camera" | grep -q . && docker stop android-camera && docker rm android-camera || echo "No running container"
 
-          # Remove old image
-          docker rmi "${{ secrets.DOCKER_USERNAME }}/android-camera-app:latest" || true
-
-          # Run the new container
-          docker run -t --name android-camera "${{ secrets.DOCKER_USERNAME }}/android-camera-app:latest"
-
-          # Optional: Copy APK from container to EC2 host (for download or distribution)
-          docker cp android-camera:/serve/app-debug.apk /home/ubuntu/app-debug.apk
+          # Remove previous
